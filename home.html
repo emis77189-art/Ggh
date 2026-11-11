@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>النظام البيتي — المعلم</title><link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@600;700&display=swap" rel="stylesheet">
+<style>:root{--g:#f4c75b;--p:#101b2c;--l:#31445e}*{box-sizing:border-box}body{margin:0;background:#070d18;color:#f6f4ed;font-family:Tahoma,Arial,sans-serif;padding:14px;max-width:760px;margin:auto}h1{color:#ffdf83;font-size:21px}h3{color:var(--g);margin:6px 0}
+nav{display:flex;gap:6px;position:sticky;top:0;background:#070d18;padding:6px 0}nav button{flex:1;font-size:13px;padding:9px 3px}button{border:1px solid var(--l);border-radius:12px;padding:10px;font:inherit;background:#17263a;color:#f6f4ed}button.on,.go{background:linear-gradient(135deg,#fff0a7,#e8b83d);color:#211a08;font-weight:bold;border:0}
+.c{background:var(--p);border:1px solid var(--l);border-radius:14px;padding:13px;margin:10px 0}input,textarea{width:100%;background:#0b1422;border:1px solid #344761;border-radius:10px;color:#f6f4ed;padding:10px;font:inherit;margin:4px 0 10px}label{font-size:13px;color:#aab6c8}.r{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid #1d2c42}.sm{padding:7px 11px;font-size:13px}.p{display:none}.p.on{display:block}.lc{background:linear-gradient(160deg,#16253b,#0c1626);border:2px solid #9e813d;border-radius:18px;padding:14px;margin:12px 0}.lh{text-align:center;color:#ffe08a;font:700 18px Amiri,serif}.ld{text-align:center;background:linear-gradient(135deg,#fff0a7,#e8b83d);color:#211a08;font-weight:bold;border-radius:999px;padding:6px;margin:10px 0}.lr{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:#ffffff0d;margin:5px 0}.lr b{background:#e8b83d;color:#211a08;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font-size:13px}#tst{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#20c997;color:#06231b;padding:10px 16px;border-radius:999px;font-weight:bold;z-index:9;max-width:92%}#slb{position:fixed;top:0;left:0;right:0;background:#2b5876;padding:12px;text-align:center;z-index:9;font-weight:bold}</style></head><body>
+<a href="index.html" style="color:#f4c75b;text-decoration:none;font-size:14px">→ العودة إلى الصف الذهبي</a><h1>🏠 النظام البيتي</h1><nav id="nv"></nav><div id="v"></div>
+<script src="home-core.js"></script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import{getDatabase,ref,get,set,onValue,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+const db=getDatabase(initializeApp({apiKey:"AIzaSyD23rt6LjPpLfKtNnoT4Sb4DFN8XDWf8MQ",authDomain:"manssa-c72f5.firebaseapp.com",projectId:"manssa-c72f5",appId:"1:700342818242:web:140e444c4eb459a74af25b"}));
+const V=document.getElementById('v'),D=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'],D7=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],tabs=['الجدول','النظام','التلاميذ','المتابعة','جدول الدروس'];
+let tab=({schedule:0,system:1,lessons:4})[location.hash.slice(1)]||0,cfg={...DEF},sch={},sts={},logs={},names={},day=dayKey(new Date()),open={};
+const R=p=>ref(db,'home/'+p),rnd=()=>Math.random().toString(36).slice(2,10),base=location.href.replace(/[^/]*$/,'')+'student.html';
+const wa=t=>window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+const tot=i=>Object.values(logs[i]||{}).reduce((a,d)=>a+Object.values(d).reduce((b,x)=>b+(x.p||0),0),0);
+function nav(){document.getElementById('nv').innerHTML=tabs.map((t,i)=>'<button class="'+(i==tab?'on':'')+'" onclick="T('+i+')">'+t+'</button>').join('')}
+window.T=i=>{tab=i;draw()};
+const subs=i=>{const e=document.getElementById('d'+i);return e?e.value.split('\n').map(x=>x.trim()).filter(Boolean):(sch[i]||[])};
+function plan(i){const S2={};for(let k=0;k<5;k++)S2[k]=subs(k);return'📅 جدول يوم '+D7[i]+(i>4?' (مراجعة دروس الأحد)':'')+'\n\n'+genD(cfg,S2,i).map(t=>'▫️ '+m2t(t.from)+' '+t.title).join('\n')+'\n\n⭐ افتحوا الرابط الموحد واضغطوا «تم» عند إنجاز كل مهمة في وقتها:\n'+base}
+function draw(){nav();const di=new Date().getDay();let h='';
+ if(tab==0)h='<div class="c"><button class="go" style="width:100%" onclick="ST()">📤 إرسال جدول اليوم للكروب</button></div>'+D.map((d,i)=>'<div class="c"><h3>'+d+'</h3><label>المواد (كل مادة في سطر)</label><textarea id="d'+i+'" rows="4">'+((sch[i]||[]).join('\n'))+'</textarea><button class="sm" onclick="SD('+i+')">📤 حفظ وإرسال جدول '+d+'</button></div>').join('')+'<div class="c"><h3>الجمعة والسبت</h3><small style="color:#aab6c8">عطلة رسمية: تُوزَّع دروس الأحد عليهما تلقائيًا للمراجعة.</small><br><br><button class="sm" onclick="SD(5)">📤 إرسال جدول الجمعة</button> <button class="sm" onclick="SD(6)">📤 إرسال جدول السبت</button></div><button class="go" style="width:100%" onclick="SS()">حفظ ونشر الجدول</button>';
+ if(tab==1)h='<div class="c">'+[['wakeAm','أيام الصباحي: الاستيقاظ'],['bfAm','أيام الصباحي: الفطور'],['amS','أيام الصباحي: تبدأ مهام ما بعد العودة'],['amE','أيام الصباحي: تنتهي المهام'],['bfPm','أيام العصري: الفطور'],['pmMS','أيام العصري: مهام الصباح تبدأ'],['pmME','أيام العصري: مهام الصباح تنتهي'],['pmES','أيام العصري: مهام ما بعد العودة تبدأ'],['pmEE','أيام العصري: تنتهي المهام'],['lunch','الغداء (أيام الصباحي)'],['lunchPm','الغداء (أيام العصري)'],['dinner','العشاء'],['sleep','ساعة النوم']].map(x=>'<label>'+x[1]+'</label><input type="time" id="c_'+x[0]+'" value="'+cfg[x[0]]+'">').join('')+'<label>رمز الأهل لتأكيد النوم (4 أرقام، اتركه فارغًا لإلغائه)</label><input id="c_pin" maxlength="4" inputmode="numeric" value="'+(cfg.pin||'')+'"><label><input type="checkbox" id="c_swap" '+(cfg.swap?'checked':'')+' style="width:auto"> عكس الدوامين (شباط: الأحد والاثنين عصري)</label><br><br><button class="go" onclick="SC()">حفظ</button></div><div class="c"><small>الدوام الحالي: الأحد والاثنين '+(cfg.swap?'عصري':'صباحي')+'، والثلاثاء إلى الخميس '+(cfg.swap?'صباحي':'عصري')+'. وقت الدوام يُستثنى تلقائيًا.</small></div>';
+ if(tab==2)h='<div class="c"><button class="go" style="width:100%" onclick="LK()">📤 إرسال الرابط الموحد لكروب الصف</button><br><br><button class="sm" onclick="CP()">نسخ الرابط</button><small style="display:block;margin-top:8px;color:#aab6c8">رابط واحد لا يتغير، يكتب فيه التلميذ اسمه الثلاثي مرة واحدة فقط، ويتحدّث محتواه يوميًا تلقائيًا.</small></div><div class="c"><button class="go" onclick="IM()">استيراد التلاميذ من الصف الذهبي</button><br><br><input id="nm" placeholder="اسم تلميذ جديد (ثلاثي)"><button class="go" onclick="AD()">＋ إضافة تلميذ</button></div><div class="c">'+Object.keys(sts).map(i=>'<div class="r"><span>'+sts[i].name+'</span><span>⭐ '+tot(i)+' <button class="sm" onclick="DL(\''+i+'\')">حذف</button></span></div>').join('')+'</div>';
+ if(tab==3){const dd=new Date(day+'T12:00:00').getDay(),T=genD(cfg,sch,dd);
+  h=sleepCard()+'<div class="c"><label>التاريخ (السجلات السابقة محفوظة)</label><input type="date" id="dt" value="'+day+'" onchange="DY(this.value)"></div><div class="c">'+Object.keys(sts).map(i=>{const Lg=(logs[i]||{})[day]||{};let p=0,n=0;Object.values(Lg).forEach(x=>{n++;p+=x.p||0});
+   const sl=Lg.sleep?new Date(Lg.sleep.t).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}):'—';
+   return'<div class="r" onclick="OP(\''+i+'\')" style="cursor:pointer"><span>'+sts[i].name+'</span><span>مهام '+n+'/'+T.length+' · نقاط <b>'+p+'</b> · نوم '+sl+' · مجموع '+tot(i)+'</span></div>'+
+   (open[i]?'<div style="padding:6px 10px;font-size:13px">'+(T.length?T:[]).map(t=>{const x=Lg[t.id];return'<div>'+(x?'✅':'⬜')+' '+t.title+' <small>'+(x?new Date(x.t).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'})+' · +'+(x.p||0):m2t(t.from))+'</small></div>'}).join('')+'</div>':'')}).join('')+'</div>'+feedHTML()}
+ if(tab==4)h=lessonsHTML();
+ V.innerHTML=h}
+window.OP=i=>{open[i]=!open[i];draw()};window.DY=v=>{day=v||day;draw()};
+async function save(){const o={};D.forEach((d,i)=>o[i]=subs(i));await set(R('schedule'),o)}
+window.SS=async()=>{await save();alert('تم الحفظ والنشر ✔')};
+window.SD=async i=>{await save();wa(plan(i))};
+window.ST=()=>SD(new Date().getDay());
+window.SC=async()=>{const o={};['wakeAm','bfAm','amS','amE','bfPm','pmMS','pmME','pmES','pmEE','sleep','lunch','lunchPm','dinner'].forEach(k=>o[k]=document.getElementById('c_'+k).value);o.swap=document.getElementById('c_swap').checked;o.pin=document.getElementById('c_pin').value.trim();await set(R('config'),o);alert('تم الحفظ ✔')};
+window.LK=()=>wa('السلام عليكم، هذا الرابط الموحد لمتابعة مهام الصف الرابع اليومية.\nافتحوه واكتبوا الاسم الثلاثي مرة واحدة فقط، وبعدها يفتح مباشرة كل يوم:\n'+base);
+window.CP=async()=>{await navigator.clipboard.writeText(base);alert('تم نسخ الرابط')};
+async function sync(){for(const i in sts)for(const k of nkeys(sts[i].name))if(!names[k]){names[k]=i;await set(R('names/'+k),i)}}
+const mk=n=>set(R('students/m'+rnd()),{name:n});
+window.AD=async()=>{const e=document.getElementById('nm'),n=e.value.trim();if(!n)return;await mk(n);e.value=''};
+window.DL=async i=>{if(confirm('حذف '+sts[i].name+'؟'))await set(R('students/'+i),null)};
+window.IM=async()=>{let L=[];
+ try{L=JSON.parse(localStorage.getItem('golden_class_v2')||'{}').students||[]}catch(e){}
+ if(!L.length)try{const v=await new Promise((res,rej)=>{const r=indexedDB.open('golden_class_db',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onerror=()=>rej();r.onsuccess=()=>{try{const g=r.result.transaction('kv').objectStore('kv').get('golden_class_v2');g.onsuccess=()=>res(g.result);g.onerror=()=>rej()}catch(e){rej()}}});L=JSON.parse(v||'{}').students||[]}catch(e){}
+ if(!L.length)try{const x=await get(ref(db,'backups/goldenClassData/savedContent/students'));L=x.val()||[];if(!Array.isArray(L))L=Object.values(L)}catch(e){}
+ if(!L.length)return alert('لم أجد تلاميذ. أضفهم يدويًا.');let n=0;
+ for(const s of L)if(s&&s.id&&s.name&&!sts[s.id]){await set(R('students/'+s.id),{name:s.name});n++}alert('تم استيراد '+n+' تلميذ')};
+
+/* ===== أدوات مساعدة ===== */
+const tm=t=>new Date(t).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+function tst(m){let e=document.getElementById('tst');if(e)e.remove();e=document.createElement('div');e.id='tst';e.textContent=m;document.body.append(e);setTimeout(()=>e.remove(),3000)}
+let seen=null;
+function notify(){const cur=new Set(),fresh=[],tk=dayKey(new Date());for(const i in logs)for(const d in logs[i])for(const id in logs[i][d]){const k=i+'/'+d+'/'+id;cur.add(k);if(seen&&!seen.has(k)&&d===tk)fresh.push(((sts[i]||{}).name||'')+': '+(logs[i][d][id].n||id))}
+ seen=cur;fresh.forEach((m,j)=>setTimeout(()=>tst('✅ '+m),j*3200))}
+function titleOf(d,id){const w=new Date(d+'T12:00:00').getDay();const x=genD(cfg,sch,w).find(t=>t.id===id);return x?x.title:id}
+function feedHTML(){const out=[];Object.keys(sts).forEach(i=>{const L=(logs[i]||{})[day]||{};Object.keys(L).forEach(id=>{const x=L[id];out.push({n:sts[i].name,t:x.t,p:x.p||0,title:x.n||titleOf(day,id)})})});out.sort((a,b)=>b.t-a.t);
+ return'<div class="c"><h3>🔔 آخر الإنجازات</h3>'+(out.slice(0,30).map(o=>'<div class="r"><span>✅ '+o.n+'</span><span>'+o.title+' · '+tm(o.t)+' · +'+o.p+'</span></div>').join('')||'<small>لا إنجازات في هذا اليوم بعد.</small>')+'</div>'}
+/* ===== متابعة النوم ===== */
+const sleepList=()=>{const k=dayKey(new Date());return Object.keys(sts).filter(i=>!((logs[i]||{})[k]||{}).sleep).map(i=>sts[i].name)};
+const sleepDue=()=>{const d=new Date();return [0,1,2,3,6].includes(d.getDay())&&d.getHours()*60+d.getMinutes()>=t2m(cfg.sleep)+60};
+function sleepCard(){const L=sleepList(),due=sleepDue();return'<div class="c"><h3>😴 متابعة النوم</h3>'+(due?(L.length?'<div>لم يؤكدوا نومهم ('+L.length+'): '+L.join('، ')+'</div><br><button class="go" style="width:100%" onclick="SLP()">📤 إرسال رسالة النوم للكروب</button>':'<div>🎉 الجميع أكدوا نومهم</div>'):'<small>يُجهَّز التنبيه بعد الساعة '+m2t(t2m(cfg.sleep)+60)+' (بعد ساعة من موعد النوم).</small><br><br><button class="sm" onclick="SLP()">معاينة الرسالة الآن</button>')+'</div>'}
+window.SLP=()=>{const L=sleepList();if(!L.length)return alert('الجميع أكدوا نومهم ✔');const b=document.getElementById('slb');if(b)b.remove();wa('🌙 تنبيه النوم\n\nانتهى موعد النوم ('+m2t(t2m(cfg.sleep))+') ولم يؤكد نومه كل من:\n'+L.map((n,i)=>(i+1)+'. '+n).join('\n')+'\n\nنرجو من أولياء الأمور توجيههم للنوم فورًا، فالنوم المبكر أساس النشاط والتفوق في الغد 🌟')};
+setInterval(()=>{if(!sleepDue()||!Object.keys(sts).length)return;const k='hs_slp_'+dayKey(new Date());if(localStorage.getItem(k)||!sleepList().length)return;localStorage.setItem(k,1);const b=document.createElement('div');b.id='slb';b.innerHTML='⏰ مضت ساعة على موعد النوم، وهناك تلاميذ لم ينوموا<br><button class="go sm" onclick="SLP()" style="margin-top:6px">📤 إرسال رسالة النوم للكروب</button> <button class="sm" onclick="this.parentNode.remove()">لاحقًا</button>';document.body.append(b)},30000);
+setInterval(()=>{tab==3&&draw()},60000);
+/* ===== جدول الدروس ===== */
+const school=()=>localStorage.getItem('hs_school')||'مدرسة الأنفال الابتدائية للبنين',cls=()=>localStorage.getItem('hs_class')||'الصف الرابع الابتدائي';
+window.SN=()=>{localStorage.setItem('hs_school',document.getElementById('sn').value.trim());localStorage.setItem('hs_class',document.getElementById('cn').value.trim());draw()};
+function lessonsHTML(){return'<div class="c"><label>اسم المدرسة</label><input id="sn" value="'+school()+'" onchange="SN()"><label>الصف</label><input id="cn" value="'+cls()+'" onchange="SN()"><button class="go" style="width:100%" onclick="LC(-1)">📤 مشاركة الجدول الكامل (بطاقة)</button><small style="display:block;margin-top:8px;color:#aab6c8">المواد مأخوذة من تبويب «الجدول» بنفس ترتيب الحصص.</small></div>'+
+ D.map((d,i)=>{const L=sch[i]||[];return'<div class="lc"><div class="lh">'+school()+'</div><div class="ld">'+cls()+' — يوم '+d+'</div>'+(L.length?L.map((s,k)=>'<div class="lr"><b>'+(k+1)+'</b>'+s+'</div>').join(''):'<div class="lr">لم تُدخل مواد هذا اليوم</div>')+'<button class="sm" style="width:100%;margin-top:6px" onclick="LC('+i+')">📤 إرسال بطاقة يوم '+d+'</button></div>'}).join('')}
+const rr=(x,a,b,w,hh,r,f)=>{x.beginPath();x.roundRect?x.roundRect(a,b,w,hh,r):x.rect(a,b,w,hh);x.fillStyle=f;x.fill()};
+window.LC=async i=>{try{await document.fonts.load('700 30px Cairo');await document.fonts.load('700 50px Amiri')}catch(e){}
+ const one=i>=0,days=one?[i]:[0,1,2,3,4],mx=Math.max(1,...days.map(k=>(sch[k]||[]).length)),W=one?1080:1500,H=one?400+mx*104+110:380+mx*100+110,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.direction='rtl';
+ const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0f1d33');g.addColorStop(1,'#07110f');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.strokeStyle='#e0b84f';x.lineWidth=6;x.strokeRect(14,14,W-28,H-28);x.lineWidth=2;x.strokeRect(30,30,W-60,H-60);
+ x.textAlign='center';x.fillStyle='#f6e2a4';x.font='700 56px Amiri,Cairo';x.fillText(school(),W/2,120);
+ x.fillStyle='#e0b84f';x.font='700 30px Cairo';x.fillText(cls()+' — جدول الدروس',W/2,175);x.fillStyle='#e0b84f55';x.fillRect(80,200,W-160,3);
+ if(one){rr(x,W/2-190,235,380,70,35,'#e8b83d');x.fillStyle='#211a08';x.font='700 38px Cairo';x.fillText('يوم '+D[i],W/2,284);
+  (sch[i]||[]).forEach((s,k)=>{const y=340+k*104;rr(x,70,y,W-140,86,22,k%2?'#ffffff10':'#ffffff1c');rr(x,W-150,y+14,58,58,29,'#e8b83d');x.fillStyle='#211a08';x.font='700 30px Cairo';x.fillText(String(k+1),W-121,y+54);x.textAlign='right';x.fillStyle='#f6f4ed';x.font='700 38px Cairo';x.fillText(s,W-185,y+58);x.textAlign='center'});
+  if(!(sch[i]||[]).length){x.fillStyle='#aab6c8';x.font='600 30px Cairo';x.fillText('لا توجد مواد مسجلة',W/2,380)}}
+ else{const cw=(W-140)/5;days.forEach((k,j)=>{const cx=W-70-(j+1)*cw+4;rr(x,cx,235,cw-8,70,18,'#e8b83d');x.fillStyle='#211a08';x.font='700 32px Cairo';x.fillText(D[k],cx+cw/2-4,282);
+   (sch[k]||[]).forEach((s,m)=>{const y=325+m*100;rr(x,cx,y,cw-8,86,16,m%2?'#ffffff10':'#ffffff1c');x.fillStyle='#f6f4ed';x.font='700 30px Cairo';x.fillText(s,cx+cw/2-4,y+55,cw-30)})})}
+ x.fillStyle='#aab6c8';x.font='600 22px Cairo';x.textAlign='center';x.fillText('الأستاذ علي عبدالله الغزي',W/2,H-50);
+ c.toBlob(async b=>{const f=new File([b],'جدول-الدروس'+(one?'-'+D[i]:'')+'.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'جدول الدروس'});return}catch(e){if(e.name==='AbortError')return}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=f.name;a.click();tst('نُزّلت البطاقة، أرسلها في واتساب')})};
+onValue(R('config'),v=>{cfg={...DEF,...(v.val()||{})};draw()});onValue(R('schedule'),v=>{sch=v.val()||{};draw()});
+onValue(R('names'),v=>{names=v.val()||{};sync()});onValue(R('students'),v=>{sts=v.val()||{};draw();sync()});onValue(R('log'),v=>{logs=v.val()||{};notify();tab>1&&draw()});
+</script></body></html>

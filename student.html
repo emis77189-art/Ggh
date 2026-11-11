@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a0907"><title>مهامي اليوم</title>
+<style>:root{--g:#f4c75b;--bg:#070d18;--p:#101b2c;--l:#31445e;--ok:#20c997}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f6f4ed;font-family:Tahoma,Arial,sans-serif;padding:14px;max-width:560px;margin:auto}
+h1{color:#ffdf83;font-size:22px;margin:6px 0}.sc{display:flex;justify-content:space-between;background:var(--p);border:1px solid #9e813d;border-radius:16px;padding:14px;margin:10px 0}.sc b{color:var(--g);font-size:24px}
+.t{background:var(--p);border:1px solid var(--l);border-radius:14px;padding:13px;margin:9px 0;display:flex;justify-content:space-between;align-items:center;gap:10px}.t small{color:#aab6c8;display:block;margin-top:4px}
+.t.done{border-color:var(--ok);opacity:.75}.t.off{opacity:.45}button{border:0;border-radius:999px;padding:11px 18px;font:inherit;font-weight:bold;background:linear-gradient(135deg,#fff0a7,#e8b83d);color:#211a08}button:disabled{background:#2a3a50;color:#8fa0b8}.ok{color:var(--ok);font-weight:bold}.err{text-align:center;margin-top:60px;color:#ff9aa6}.t.late{border-color:#7a3340}.miss{color:#ff9aa6;font-size:13px;display:block;margin-top:4px}#tt{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#20c997;color:#06231b;padding:11px 18px;border-radius:999px;font-weight:bold;z-index:9;max-width:90%;text-align:center}</style></head><body><div id="a"></div>
+<script src="home-core.js"></script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import{getDatabase,ref,get,set,onValue,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+const db=getDatabase(initializeApp({apiKey:"AIzaSyD23rt6LjPpLfKtNnoT4Sb4DFN8XDWf8MQ",authDomain:"manssa-c72f5.firebaseapp.com",projectId:"manssa-c72f5",appId:"1:700342818242:web:140e444c4eb459a74af25b"}));
+const A=document.getElementById('a');let id=localStorage.getItem('hs_id'),off=0,st,cfg={},sch,L={};
+const MISS={wake:'لم تؤكد استيقاظك في وقته',bf:'لم تتناول فطورك في وقته',lunch:'لم تتناول غداءك في وقته',dinner:'لم تتناول عشاءك في وقته',sleep:'لم تؤكد نومك في الوقت ⚠️ نم الآن!',go:'لم تؤكد انطلاقك إلى المدرسة',back:'لم تؤكد عودتك إلى البيت'};
+const now=()=>new Date(Date.now()+off),mins=()=>{const n=now();return n.getHours()*60+n.getMinutes()};
+function toast(m){let e=document.getElementById('tt');if(e)e.remove();e=document.createElement('div');e.id='tt';e.textContent=m;document.body.append(e);setTimeout(()=>e.remove(),3500)}
+function login(msg){A.innerHTML='<h1>أهلًا بك 👋</h1><p>اكتب اسمك الثلاثي كما هو في سجل الصف</p><input id="n" placeholder="الاسم الثلاثي" style="width:100%;padding:12px;border-radius:12px;border:1px solid #31445e;background:#0b1422;color:#fff;font:inherit;margin:8px 0"><button id="go" style="width:100%">دخول</button><p class="err" style="margin-top:14px">'+(msg||'')+'</p>'}
+function draw(){if(!st||!sch)return;const n=now(),di=n.getDay();const all=Object.values(L).reduce((a,d)=>a+Object.values(d).reduce((b,x)=>b+(x.p||0),0),0);
+ const D=L[dayKey(n)]||{};
+ const T=genD(cfg,sch,di),m=mins();let P=0;const ph=phase(cfg,di,m),banner=ph.k==='in'?'':'<div class="t" style="justify-content:center;border-color:#9e813d"><b>'+ph.text+'</b></div>';
+ const rows=T.map(t=>{const d=D[t.id],ph=d?d.p||0:0;P+=ph;const early=m<t.from,late=m>t.to;
+  return'<div class="t '+(d?'done':late?'late':early?'off':'')+'"><div><b>'+t.title+'</b><small>'+m2t(t.from)+' – '+m2t(t.to)+(d?' · <span class="ok">+'+ph+'</span>':'')+'</small>'+(!d&&late?'<span class="miss">⛔ '+(MISS[t.id]||('فاتك وقت: '+t.title))+'</span>':'')+'</div>'+
+  (d?'<span class="ok">✔</span>':late?'':'<button data-i="'+t.id+'" '+(early?'disabled':'')+'>'+(early?'لم يحن':({sleep:'نائم',go:'انطلقت',back:'عدت'})[t.id]||'تم')+'</button>')+'</div>'}).join('');
+ A.innerHTML='<h1>مرحبًا '+st.name+' ⭐</h1><div class="sc"><span>نقاط اليوم</span><b>'+P+'</b><span>المجموع</span><b>'+all+'</b></div>'+banner+rows+'<p style="text-align:center"><a id="out" href="#" style="color:#7f8ea3;font-size:12px">ليس أنا؟ تغيير الاسم</a></p>'}
+A.onclick=async e=>{const x=e.target;
+ if(x.id==='out'){e.preventDefault();localStorage.removeItem('hs_id');location.reload();return}
+ if(x.id==='go'){const raw=document.getElementById('n').value,ci=cmp(raw);if(ci.length<5)return login('اكتب اسمك الثلاثي كاملًا');
+  try{const N=(await get(ref(db,'home/names'))).val()||{},toks=nm(raw).split('_'),hit=new Set();
+   for(const k in N){const ck=cmp(k),kt=k.split('_');if(ck===ci||ck.startsWith(ci)||ck.includes(ci)||(toks.length>1&&toks.every(w=>kt.includes(w))))hit.add(N[k])}
+   if(!hit.size)return login('لم أجد اسمك. تأكد من كتابته كاملًا، أو راجع المعلم.');
+   if(hit.size>1)return login('يوجد أكثر من تلميذ بهذا الاسم، اكتب اسمك كاملًا.');
+   const r=[...hit][0],s=(await get(ref(db,'home/students/'+r))).val();if(!s)return login('هذا الاسم غير مفعّل، راجع المعلم.');id=r;localStorage.setItem('hs_id',id);start()}catch(e){login('تعذر الاتصال، حاول مرة أخرى.')}return}
+ const i=x.dataset&&x.dataset.i;if(!i)return;const di=now().getDay(),t=genD(cfg,sch,di).find(y=>y.id===i),p=pts(t,mins());if(p<0)return toast('لم يحن وقتها بعد');if(p===0)return toast('انتهى وقت هذه المهمة');
+ if(t.pin&&cfg.pin){const q=prompt('رمز وليّ الأمر:');if(q!==String(cfg.pin)){alert('الرمز غير صحيح');return}}
+ x.disabled=true;await set(ref(db,'home/log/'+id+'/'+dayKey(now())+'/'+i),{t:serverTimestamp(),p,n:t.title});toast('أحسنت! تم تسجيل: '+t.title+' (+'+p+')')};
+async function start(){try{st=(await get(ref(db,'home/students/'+id))).val();if(!st){localStorage.removeItem('hs_id');id=null;return login()}
+ onValue(ref(db,'home/log/'+id),v=>{L=v.val()||{};draw()});draw()}catch(e){login('تعذر الاتصال.')}}
+onValue(ref(db,'.info/serverTimeOffset'),v=>off=v.val()||0);
+onValue(ref(db,'home/config'),v=>{cfg=v.val()||{};draw()});
+onValue(ref(db,'home/schedule'),v=>{sch=v.val()||{};draw()});
+setInterval(draw,20000);id?start():login();
+</script></body></html>
